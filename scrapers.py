@@ -1,9 +1,3 @@
-“””
-scrapers.py — Módulo de extracción por plataforma
-TikTok desactivado en Railway (requiere Playwright/Chromium).
-Para activarlo: desplegar con Dockerfile propio.
-“””
-
 import os
 import logging
 from datetime import datetime, timedelta
@@ -12,16 +6,14 @@ logger = logging.getLogger(“scrapers”)
 
 KEYWORDS = os.getenv(
 “KEYWORDS”,
-“Paco Salazar,PSOE Argentina CERA,voto CERA Andalucía,Pilar Cancela,Ley Memoria Democrática”
+“Paco Salazar,PSOE Argentina CERA,voto CERA Andalucia,Pilar Cancela,Ley Memoria Democratica”
 ).split(”,”)
 
-TIKTOK_KEYWORDS = os.getenv(“TIKTOK_KEYWORDS”, “Paco Salazar,voto CERA,Pilar Cancela”).split(”,”)
 INSTA_ACCOUNTS = os.getenv(“INSTA_ACCOUNTS”, “psoe_argentina,elespanol”).split(”,”)
 FB_PAGES = os.getenv(“FB_PAGES”, “PSOE,elespanolcom,rtve”).split(”,”)
-
 SINCE_DATE = (datetime.now() - timedelta(days=7)).strftime(”%Y-%m-%d”)
 
-def fetch_x(limit: int = 20) -> list:
+def fetch_x(limit=20):
 posts = []
 try:
 from ntscraper import Nitter
@@ -37,12 +29,12 @@ posts.append({
 “content”: tweet.get(“text”, “”)[:300],
 })
 except Exception as e:
-logger.warning(f”X keyword ‘{kw}’: {e}”)
+logger.warning(“X keyword %s: %s”, kw, e)
 except Exception as e:
-logger.error(f”fetch_x error: {e}”)
+logger.error(“fetch_x error: %s”, e)
 return posts
 
-def fetch_instagram(limit: int = 10) -> list:
+def fetch_instagram(limit=10):
 posts = []
 try:
 import instaloader
@@ -57,33 +49,32 @@ if ig_user and ig_pass:
 try:
 L.login(ig_user, ig_pass)
 except Exception as e:
-logger.warning(f”Instagram login failed: {e}”)
-
-```
+logger.warning(“Instagram login failed: %s”, e)
 for acc in INSTA_ACCOUNTS:
 try:
 profile = instaloader.Profile.from_username(L.context, acc.strip())
-for post in list(profile.get_posts())[:limit // max(len(INSTA_ACCOUNTS), 1)]:
+n = max(limit // max(len(INSTA_ACCOUNTS), 1), 1)
+for post in list(profile.get_posts())[:n]:
 posts.append({
-"platform": "Instagram",
-"date": post.date.strftime("%Y-%m-%d"),
-"user": acc.strip(),
-"content": (post.caption or "")[:300],
+“platform”: “Instagram”,
+“date”: post.date.strftime(”%Y-%m-%d”),
+“user”: acc.strip(),
+“content”: (post.caption or “”)[:300],
 })
 except Exception as e:
-logger.warning(f"Instagram '{acc}': {e}")
+logger.warning(“Instagram %s: %s”, acc, e)
 except Exception as e:
-logger.error(f"fetch_instagram error: {e}")
+logger.error(“fetch_instagram error: %s”, e)
 return posts
-```
 
-def fetch_facebook(limit: int = 15) -> list:
+def fetch_facebook(limit=15):
 posts = []
 try:
 from facebook_scraper import get_posts
 for page in FB_PAGES:
 try:
 count = 0
+per_page = max(limit // max(len(FB_PAGES), 1), 1)
 for post in get_posts(page.strip(), pages=2, timeout=15, extra_info=False):
 text = post.get(“text”, “”) or post.get(“post_text”, “”) or “”
 if not text:
@@ -95,19 +86,14 @@ posts.append({
 “content”: text[:300],
 })
 count += 1
-if count >= limit // max(len(FB_PAGES), 1):
+if count >= per_page:
 break
 except Exception as e:
-logger.warning(f”Facebook ‘{page}’: {e}”)
+logger.warning(“Facebook %s: %s”, page, e)
 except Exception as e:
-logger.error(f”fetch_facebook error: {e}”)
+logger.error(“fetch_facebook error: %s”, e)
 return posts
 
-def fetch_tiktok(limit: int = 10) -> list:
-“””
-TikTok requiere Playwright/Chromium — no disponible en Railway Nixpacks estándar.
-Para activarlo necesitas un Dockerfile propio con chromium instalado.
-Por ahora devuelve lista vacía sin romper el pipeline.
-“””
-logger.info(“TikTok scraper desactivado en este entorno (requiere Playwright).”)
+def fetch_tiktok(limit=10):
+logger.info(“TikTok scraper desactivado (requiere Playwright).”)
 return []
