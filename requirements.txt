@@ -4,8 +4,6 @@ apscheduler==3.10.4
 ntscraper==0.3.8
 instaloader==4.13
 facebook-scraper==0.2.59
-TikTokApi==6.4.1
-playwright==1.47.0
 textblob==0.18.0
 vaderSentiment==3.3.2
 python-dotenv==1.0.1
